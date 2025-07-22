@@ -1,13 +1,11 @@
 ﻿using System.Runtime.InteropServices;
 using SharpShell.Attributes;
 using SharpShell.SharpContextMenu;
-
-using System.Drawing;
-using System.Windows.Forms;
+using ContextBin.ShellExtension.Interfaces;
 
 namespace ContextBin.ShellExtension;
 
-// Ці атрибути реєструють твій клас як Shell Extension у системі.
+// Ці атрибути реєструють клас як Shell Extension у системі.
 // ComVisible(true) дозволяє COM-інтерфейсам (які Windows використовує для Shell Extensions) бачити твій клас.
 // ClassInterfaceType.None означає, що COM не генеруватиме автоматичний інтерфейс.
 [ComVisible(true)]
@@ -25,60 +23,30 @@ namespace ContextBin.ShellExtension;
 [COMServerAssociation(AssociationType.DirectoryBackground)]
 // DesktopBackground = для фону робочого столу.
 [COMServerAssociation(AssociationType.DesktopBackground)]
+
+// SharpContextMenu є базовим класом для створення контекстних меню в SharpShell.
 public class ContextBinContextMenu : SharpContextMenu
 {
-    protected override bool CanShowMenu()
+    private readonly IMenuBuilder _menuBuilder;
+    private readonly IContextBinService _contextBinService;
+
+    public ContextBinContextMenu(IMenuBuilder menuBuilder, IContextBinService contextBinService)
     {
-        // Ми хочемо показувати головний пункт ContextBin завжди, коли це можливо:
-        // - Коли вибрані файли/папки (для "Відправити в кошик")
-        // - Коли клік по фону папки або робочого столу (для "Переглянути кошик", "Очистити кошик")
-        return true; // SharpShell з атрибутами [COMServerAssociation] сам вирішить, де показувати.
+        _menuBuilder = menuBuilder;
+        _contextBinService = contextBinService;
     }
 
+    protected override bool CanShowMenu() => true;
+
+    // Цей метод викликається, коли користувач відкриває контекстне меню.
     protected override ContextMenuStrip CreateMenu()
     {
-        // Головне меню ContextBin:
-        var contextMenu = new ContextMenuStrip();
-
-        // Головний пункт "ContextBin":
-        var mainItem = (ToolStripMenuItem)contextMenu.Items.Add("ContextBin");
-
-        // Підменю "Відправити в кошик":
-        var sendToTrashItem = mainItem.DropDownItems.Add("Відправити в кошик");
-        sendToTrashItem.Click += (sender, args) => SendSelectedToContextBin();
-
-        // Підменю "Переглянути кошик":
-        var viewTrashItem = mainItem.DropDownItems.Add("Переглянути кошик");
-        viewTrashItem.Click += (sender, args) => ViewContextBin();
-
-        // Підменю "Очистити кошик":
-        var clearTrashItem = mainItem.DropDownItems.Add("Очистити кошик");
-        clearTrashItem.Click += (sender, args) => EmptyContextBin();
-
-        return contextMenu;
-    }
-
-    // --- Методи-заглушки для логіки ---
-
-    private void SendSelectedToContextBin()
-    {
-        // Цей метод буде викликати функцію Windows API для відправки файлів у системний кошик.
-        // Поки що заглушка:
-        MessageBox.Show($"Відправлення {SelectedItemPaths.Count()} елементів у кошик. (Буде реалізовано)", "ContextBin (CleanDesk)", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    private void ViewContextBin()
-    {
-        // Цей метод буде запускати наш ContextBin.UI.exe.
-        // Поки що заглушка:
-        MessageBox.Show("Запуск вікна ContextBin для перегляду та відновлення файлів. (Буде реалізовано)", "ContextBin (CleanDesk)", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        // Приклад запуску: Process.Start(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ContextBin.UI.exe"));
-    }
-
-    private void EmptyContextBin()
-    {
-        // Цей метод буде викликати функцію Windows API для очищення системного кошика.
-        // Поки що заглушка:
-        MessageBox.Show("Очищення системного кошика. (Буде реалізовано)", "ContextBin (CleanDesk)", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        // Використовуємо MenuBuilder для створення меню.
+        return _menuBuilder.CreateMenu
+        (
+            _contextBinService.ViewBin,
+            _contextBinService.SendSelectedToBin,
+            _contextBinService.EmptyBin
+        );
     }
 }
