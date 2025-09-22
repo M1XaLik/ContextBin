@@ -1,5 +1,7 @@
 # ContextBin
 
+## !РОЗРОБКА ПРОЕКТУ ТИМЧАСОВО ПРИЗУПИНЕНА
+
 📃[User Story English](./doc/UserStoryEng.md)
 
 📃[User Story Ukrainian](./doc/UserStoryUkr.md)
